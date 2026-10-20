@@ -121,13 +121,19 @@
             margin-bottom: 15px;
         }
 
-        .score-counter {
-            font-size: 0.9rem;
+        .counter-wrapper {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .score-counter, .count-counter {
+            font-size: 0.88rem;
             font-weight: bold;
             color: #38bdf8;
-            margin-bottom: 15px;
             background: rgba(56, 189, 248, 0.1);
-            padding: 8px 14px;
+            padding: 8px 12px;
             border-radius: 8px;
             display: inline-block;
         }
@@ -207,7 +213,6 @@
             color: #fff;
         }
 
-        /* 放在結果頁面的特質總覽按鈕樣式 */
         .result-overview-btn {
             background: rgba(59, 130, 246, 0.15);
             border: 1px solid var(--accent-blue);
@@ -273,7 +278,6 @@
             color: #e2e8f0;
         }
 
-        /* 彈跳視窗 Modal 樣式 */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -357,7 +361,7 @@
 
     <header>
         <h1>👥 貝爾賓團隊角色測驗</h1>
-        <p class="subtitle">共有 A 至 G 七個區塊。請在每個區塊中，使用下拉選單將 10 分分配給符合你的敘述(最少1個選項，最多3個選項)。</p>
+        <p class="subtitle">共有 A 至 G 七個區塊。每個區塊請分配 10 分，且"最少 1 個、最多 3 個選項"給予大於 0 分的分數。</p>
     </header>
 
     <div class="container">
@@ -385,7 +389,6 @@
                 <span style="font-size: 0.95rem; color: var(--text-dim);">— 你的測驗分析結果與深度解析 —</span>
             </div>
 
-            <!-- 主要角色 -->
             <div class="result-block">
                 <span class="result-badge badge-main">🥇 主要角色 (Dominant)</span>
                 <div class="result-role-title" id="mainRoleTitle"></div>
@@ -397,7 +400,6 @@
                 <div class="result-text" id="mainRoleCompat" style="color: #38bdf8;"></div>
             </div>
 
-            <!-- 次要角色 -->
             <div class="result-block">
                 <span class="result-badge badge-sub">🥈 次要角色 (Secondary)</span>
                 <div class="result-role-title" id="subRoleTitle" style="color: #60a5fa;"></div>
@@ -409,13 +411,11 @@
                 <div class="result-text" id="subRoleCompat" style="color: #60a5fa;"></div>
             </div>
 
-            <!-- 只在結果頁面出現的 8 大角色總覽按鈕 -->
             <button type="button" class="result-overview-btn" onclick="toggleModal(true)">📖 檢視 8 大角色特質與互補總覽</button>
             <button type="button" class="btn" onclick="resetForm()" style="width: 100%;">重新測驗</button>
         </div>
     </div>
 
-    <!-- 彈跳視窗 Modal -->
     <div class="modal-overlay" id="overviewModal" onclick="handleModalClick(event)">
         <div class="modal-content">
             <div class="modal-header">
@@ -565,7 +565,7 @@
             },
             ME: { 
                 name: "評估型 (Monitor Evaluator)", 
-                desc: "冷靜、理智且具高度客觀分析力。擅長徹底權衡所有建議的利弊、看清潛在風險，做出公平而不偏頗的偏見決策。性格深思熟慮，不易受情緒或熱情所左右。",
+                desc: "冷靜、理智且具高度客觀分析力。擅長徹底權衡所有建議的利弊、看清潛在風險，做出公平而不偏頗的決策。性格深思熟慮，不易受情緒或熱情所左右。",
                 compat: "適合與充滿熱情創意的【資源調查型 (RI)】或【植物型 (Plant)】來往，為激進或過熱的點子提供理性客觀的審視與煞車。"
             },
             IMP: { 
@@ -594,8 +594,11 @@
                 html += `
                     <div class="section-box ${activeClass}" id="section-${sec.id}">
                         <div class="section-title">${sec.title}</div>
-                        <div class="section-desc">請在此區塊分配 10 分給符合你的選項（未填寫視為 0 分）。</div>
-                        <div class="score-counter" id="counter-${sec.id}">目前分配總分：0 / 10 分</div>
+                        <div class="section-desc">請在此區塊分配 10 分，且**最少選 1 個、最多選 3 個**選項給予大於 0 分。</div>
+                        <div class="counter-wrapper">
+                            <div class="score-counter" id="counter-sum-${sec.id}">總分：0 / 10 分</div>
+                            <div class="count-counter" id="counter-num-${sec.id}">已選選項數：0 / 3 個</div>
+                        </div>
                 `;
 
                 sec.options.forEach((optText, optIndex) => {
@@ -648,18 +651,33 @@
 
         function updateSectionTotal(secId) {
             const selects = document.querySelectorAll(`select[data-section="${secId}"]`);
-            let total = 0;
+            let totalScore = 0;
+            let selectedCount = 0;
+
             selects.forEach(select => {
-                total += parseInt(select.value) || 0;
+                const val = parseInt(select.value) || 0;
+                totalScore += val;
+                if (val > 0) {
+                    selectedCount++;
+                }
             });
 
-            const counter = document.getElementById(`counter-${secId}`);
-            counter.innerText = `目前分配總分：${total} / 10 分`;
+            const sumCounter = document.getElementById(`counter-sum-${secId}`);
+            const numCounter = document.getElementById(`counter-num-${secId}`);
 
-            if (total === 10) {
-                counter.style.color = '#34d399';
+            sumCounter.innerText = `總分：${totalScore} / 10 分`;
+            numCounter.innerText = `已選選項數：${selectedCount} / 3 個`;
+
+            if (totalScore === 10) {
+                sumCounter.style.color = '#34d399';
             } else {
-                counter.style.color = '#f87171';
+                sumCounter.style.color = '#f87171';
+            }
+
+            if (selectedCount >= 1 && selectedCount <= 3) {
+                numCounter.style.color = '#34d399';
+            } else {
+                numCounter.style.color = '#f87171';
             }
         }
 
@@ -668,11 +686,22 @@
             
             if (delta > 0) {
                 const selects = document.querySelectorAll(`select[data-section="${currentSecId}"]`);
-                let total = 0;
-                selects.forEach(select => total += parseInt(select.value) || 0);
+                let totalScore = 0;
+                let selectedCount = 0;
 
-                if (total !== 10) {
-                    alert(`【區塊 ${currentSecId}】的分配總分目前是 ${total} 分，請調整到剛好【等於 10 分】再繼續下一頁喔！`);
+                selects.forEach(select => {
+                    const val = parseInt(select.value) || 0;
+                    totalScore += val;
+                    if (val > 0) selectedCount++;
+                });
+
+                if (totalScore !== 10) {
+                    alert(`【區塊 ${currentSecId}】的分配總分目前是 ${totalScore} 分，必須剛好等於 10 分！`);
+                    return;
+                }
+
+                if (selectedCount < 1 || selectedCount > 3) {
+                    alert(`【區塊 ${currentSecId}】目前有 ${selectedCount} 個選項獲得分數。規則限制必須【最少選 1 個、最多選 3 個】選項給分喔！`);
                     return;
                 }
             }
@@ -749,12 +778,10 @@
             document.getElementById('belbinForm').style.display = 'none';
             document.getElementById('progressContainer').style.display = 'none';
 
-            // 填入主要角色資訊
             document.getElementById('mainRoleTitle').innerText = `${mainRole.name}（得分：${sortedRoles[0].score} 分）`;
             document.getElementById('mainRoleDesc').innerText = mainRole.desc;
             document.getElementById('mainRoleCompat').innerText = mainRole.compat;
 
-            // 填入次要角色資訊
             document.getElementById('subRoleTitle').innerText = `${subRole.name}（得分：${sortedRoles[1].score} 分）`;
             document.getElementById('subRoleDesc').innerText = subRole.desc;
             document.getElementById('subRoleCompat').innerText = subRole.compat;
